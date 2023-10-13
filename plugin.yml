@@ -1,0 +1,7 @@
+---
+name: Weather
+version: 0.0.1
+main: PrograMistV1\Weather\Weather
+api: 5.0.0
+src-namespace-prefix: PrograMistV1\Weather
+...
