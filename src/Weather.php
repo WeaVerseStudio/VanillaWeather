@@ -7,8 +7,10 @@ namespace PrograMistV1\Weather;
 use pocketmine\block\BlockTypeIds;
 use pocketmine\block\VanillaBlocks;
 use pocketmine\entity\Entity;
+use pocketmine\event\entity\EntityTeleportEvent;
 use pocketmine\event\Listener;
 use pocketmine\event\player\PlayerJoinEvent;
+use pocketmine\event\world\WorldInitEvent;
 use pocketmine\math\Vector3;
 use pocketmine\network\mcpe\NetworkBroadcastUtils;
 use pocketmine\network\mcpe\protocol\AddActorPacket;
@@ -39,6 +41,11 @@ class Weather extends PluginBase implements Listener{
     }
 
     public static function changeWeather(World $world, int $weather, int $time = 6000) : void{
+        $ev = new WeatherChangeEvent($world);
+        $ev->call();
+        if($ev->isCancelled()){
+            return;
+        }
         $worldData = $world->getProvider()->getWorldData();
         $worldData->setRainTime($time);
         $worldData->setRainLevel(match ($weather) {
@@ -63,22 +70,21 @@ class Weather extends PluginBase implements Listener{
         }
     }
 
-    public static function changeWeatherForPlayer(Player $player) : void{
-        $ev = new WeatherChangeEvent($player->getWorld());
-        $ev->call();
-        if($ev->isCancelled()){
-            return;
-        }
-        $level = $player->getWorld()->getProvider()->getWorldData()->getRainLevel();
+    public static function changeWeatherForPlayer(Player $player, ?World $world = null) : void{
+        $world ?? $world = $player->getWorld();
+        $level = $world->getProvider()->getWorldData()->getRainLevel();
         $packet = null;
         if($level == 0.5){
-            $packet = LevelEventPacket::create(LevelEvent::START_RAIN, 65535, null);
+            $packets = [LevelEventPacket::create(LevelEvent::START_RAIN, 65535, null)];
         }elseif($level == 1){
-            $packet = LevelEventPacket::create(LevelEvent::START_THUNDER, 65535, null);
+            $packets = [LevelEventPacket::create(LevelEvent::START_THUNDER, 65535, null)];
+        }else{
+            $packets = [
+                LevelEventPacket::create(LevelEvent::STOP_RAIN, 0, null),
+                LevelEventPacket::create(LevelEvent::STOP_THUNDER, 0, null)
+            ];
         }
-        if($packet !== null){
-            $player->getNetworkSession()->sendDataPacket($packet);
-        }
+        NetworkBroadcastUtils::broadcastPackets([$player], $packets);
     }
 
     public static function generateThunderBolt(World $world, int $x, int $y, int $z, bool $doFire = false) : void{
@@ -121,5 +127,17 @@ class Weather extends PluginBase implements Listener{
                 $world->setBlockAt($x, $y + 1, $z, VanillaBlocks::FIRE());
             }
         }
+    }
+
+    public function onPlayerTeleport(EntityTeleportEvent $event) : void{
+        if(!($player = $event->getEntity()) instanceof Player){
+            return;
+        }
+        self::changeWeatherForPlayer($player, $event->getTo()->getWorld());
+    }
+
+    public function onWorldInit(WorldInitEvent $event) : void{
+        $world = $event->getWorld();
+        self::changeWeather($world, self::CLEAR, 18000);
     }
 }
