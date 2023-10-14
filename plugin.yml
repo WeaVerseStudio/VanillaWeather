@@ -1,5 +1,5 @@
 ---
-name: Weather
+name: VanillaWeather
 version: 0.0.1
 main: PrograMistV1\Weather\Weather
 api: 5.0.0

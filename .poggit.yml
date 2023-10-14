@@ -1,0 +1,9 @@
+--- # Poggit-CI Manifest. Open the CI at https://poggit.pmmp.io/ci/WeaVerseStudio/VanillaWeather
+build-by-default: true
+branches:
+- master
+projects:
+  VanillaWeather:
+    path: ""
+    compressBuilds: bool = true
+...
