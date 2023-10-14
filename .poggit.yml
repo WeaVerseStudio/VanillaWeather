@@ -5,4 +5,5 @@ branches:
 projects:
   VanillaWeather:
     path: ""
+    compressBuilds: bool = true
 ...
