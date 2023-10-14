@@ -13,7 +13,7 @@ use pocketmine\world\WorldManager;
 
 class WeatherTask extends Task{
 
-    public function __construct(private readonly WorldManager $worldManager){
+    public function __construct(private WorldManager $worldManager){
     }
 
     public function onRun() : void{
