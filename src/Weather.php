@@ -49,9 +49,9 @@ class Weather extends PluginBase implements Listener{
         $worldData = $world->getProvider()->getWorldData();
         $worldData->setRainTime($time);
         $worldData->setRainLevel(match ($weather) {
-            self::CLEAR => 0,
             self::RAIN => 0.5,
-            self::THUNDER => 1
+            self::THUNDER => 1,
+            default => 0
         });
         if($weather === self::RAIN){
             $packets = [LevelEventPacket::create(LevelEvent::START_RAIN, 65535, null)];
@@ -93,7 +93,6 @@ class Weather extends PluginBase implements Listener{
         if($ev->isCancelled()){
             return;
         }
-        $packets = [];
         $id = Entity::nextRuntimeId();
         $packets[] = AddActorPacket::create(
             $id,
@@ -118,9 +117,7 @@ class Weather extends PluginBase implements Listener{
             10,
             1
         );
-        if(!empty($packets)){
-            NetworkBroadcastUtils::broadcastPackets($world->getPlayers(), $packets);
-        }
+        NetworkBroadcastUtils::broadcastPackets($world->getPlayers(), $packets);
         if($ev->isDoFire()){
             $block = $world->getBlockAt($x, $y + 1, $z);
             if($block->getTypeId() === BlockTypeIds::AIR){
