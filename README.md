@@ -7,7 +7,8 @@
 > /weather <clear|rain|thunder> [duration: int] - Players who have permission can change the current weather if they wish, by entering one of the following commands: /weather rain [*duration*] or /weather thunder [*duration*], and /weather clear [*duration*] to clear the inclement weather. The **time** parameter is the duration of the weather in seconds.
 If you want to prevent weather changes in the world, then set the time value to -1.
 ### Screenshots:
-![Lightning](resources/image0.png)
+<img src="https://github.com/WeaVerseStudio/VanillaWeather/blob/master/resources/image0.png?raw=true" alt="image not found">
+<img src="https://github.com/WeaVerseStudio/VanillaWeather/blob/master/resources/image1.png?raw=true" alt="image not found">
 ![Rain](resources/image1.png)
 ### Necessary conditions:
 <img src="https://img.shields.io/static/v1?label=PHP&message=version 8.2&color=blue&style=for-the-badge&logo=php" alt="image not found">
