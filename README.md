@@ -9,7 +9,7 @@ If you want to prevent weather changes in the world, then set the time value to 
 ### Screenshots:
 <img src="https://github.com/WeaVerseStudio/VanillaWeather/blob/master/resources/image0.png?raw=true" alt="image not found">
 <img src="https://github.com/WeaVerseStudio/VanillaWeather/blob/master/resources/image1.png?raw=true" alt="image not found">
-![Rain](resources/image1.png)
+
 ### Necessary conditions:
 <img src="https://img.shields.io/static/v1?label=PHP&message=version 8.2&color=blue&style=for-the-badge&logo=php" alt="image not found">
 <img src="https://img.shields.io/static/v1?label=PMMP&message=minimal version 5.0.0&color=orange&style=for-the-badge&logo=java" alt="image not found">
