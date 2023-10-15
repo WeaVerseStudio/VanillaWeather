@@ -36,22 +36,22 @@ class WeatherCommand extends Command{
         $weather = strtolower(array_shift($args));
         $time = intval(array_shift($args));
         if($time == 0){
-            $time = rand(6000, 18000);
+            $time = rand(300, 900);
         }
         switch($weather){
             case "clear":
-                Weather::changeWeather($world, Weather::CLEAR, $time);
+                Weather::changeWeather($world, Weather::CLEAR, $time * 20);
                 break;
             case "rain":
-                Weather::changeWeather($world, Weather::RAIN, $time);
+                Weather::changeWeather($world, Weather::RAIN, $time * 20);
                 break;
             case "thunder":
-                Weather::changeWeather($world, Weather::THUNDER, $time);
+                Weather::changeWeather($world, Weather::THUNDER, $time * 20);
                 break;
             default:
                 $sender->sendMessage(TextFormat::RED."Unknown argument ".$weather);
                 break;
         }
-        $sender->sendMessage(TextFormat::GREEN."Weather changed to ".TextFormat::YELLOW.$weather.TextFormat::GREEN." for ".TextFormat::YELLOW.$time.TextFormat::GREEN." ticks");
+        $sender->sendMessage(TextFormat::GREEN."Weather changed to ".TextFormat::YELLOW.$weather.TextFormat::GREEN." for ".TextFormat::YELLOW.$time.TextFormat::GREEN." seconds");
     }
 }
