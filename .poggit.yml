@@ -1,10 +1,20 @@
 --- # Poggit-CI Manifest. Open the CI at https://poggit.pmmp.io/ci/WeaVerseStudio/VanillaWeather
 build-by-default: true
 branches:
-- master
+  - master
 projects:
   VanillaWeather:
     path: ""
     icon: "image.png"
     compressBuilds: bool = true
+    excludeDirs: {
+      [
+        "resources"
+      ]
+    }
+    excludeFiles: {
+      [
+        "image.png"
+      ]
+    }
 ...
