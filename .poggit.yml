@@ -7,14 +7,12 @@ projects:
     path: ""
     icon: "image.png"
     compressBuilds: bool = true
-    excludeDirs: {
+    excludeDirs:
       [
         "resources"
       ]
-    }
-    excludeFiles: {
+    excludeFiles:
       [
         "image.png"
       ]
-    }
 ...
