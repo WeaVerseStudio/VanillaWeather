@@ -29,11 +29,12 @@ class Weather extends PluginBase implements Listener{
     public const CLEAR = 0;
     public const RAIN = 1;
     public const THUNDER = 2;
+    public const COMMAND_WEATHER = "vanillaweather.weather.command";
 
     protected function onEnable() : void{
         $this->getServer()->getPluginManager()->registerEvents($this, $this);
         $this->getScheduler()->scheduleRepeatingTask(new WeatherTask($this->getServer()->getWorldManager()), 1);
-        $this->getServer()->getCommandMap()->register("weather", new WeatherCommand());
+        $this->getServer()->getCommandMap()->register("vanillaweather", new WeatherCommand($this));
     }
 
     public function onPlayerJoin(PlayerJoinEvent $event) : void{
@@ -73,7 +74,6 @@ class Weather extends PluginBase implements Listener{
     public static function changeWeatherForPlayer(Player $player, ?World $world = null) : void{
         $world ?? $world = $player->getWorld();
         $level = $world->getProvider()->getWorldData()->getRainLevel();
-        $packet = null;
         if($level == 0.5){
             $packets = [LevelEventPacket::create(LevelEvent::START_RAIN, 65535, null)];
         }elseif($level == 1){

@@ -11,15 +11,18 @@ use pocketmine\permission\DefaultPermissions;
 use pocketmine\permission\Permission;
 use pocketmine\permission\PermissionManager;
 use pocketmine\player\Player;
+use pocketmine\plugin\Plugin;
+use pocketmine\plugin\PluginOwnedTrait;
 use pocketmine\utils\TextFormat;
 use PrograMistV1\Weather\Weather;
 
 class WeatherCommand extends Command{
-
-    public function __construct(){
+use PluginOwnedTrait;
+    public function __construct(Plugin $plugin){
+        $this->owningPlugin = $plugin;
         parent::__construct("weather", "changes the weather", "/weather <clear|rain|thunder> [duration: int]");
         DefaultPermissions::registerPermission(
-            new Permission("weather.command"),
+            new Permission(Weather::COMMAND_WEATHER),
             [PermissionManager::getInstance()->getPermission(DefaultPermissionNames::GROUP_OPERATOR)]
         );
         $this->setPermission("weather.command");
