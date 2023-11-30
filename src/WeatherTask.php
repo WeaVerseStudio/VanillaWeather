@@ -3,6 +3,10 @@ declare(strict_types=1);
 
 namespace PrograMistV1\Weather;
 
+use pocketmine\block\BlockTypeIds;
+use pocketmine\block\Opaque;
+use pocketmine\block\SnowLayer;
+use pocketmine\block\VanillaBlocks;
 use pocketmine\event\entity\EntityDamageEvent;
 use pocketmine\math\Vector3;
 use pocketmine\player\Player;
@@ -11,6 +15,7 @@ use pocketmine\world\biome\BiomeRegistry;
 use pocketmine\world\format\SubChunk;
 use pocketmine\world\World;
 use pocketmine\world\WorldManager;
+use PrograMistV1\Weather\events\SnowLayerCreateEvent;
 
 class WeatherTask extends Task{
 
@@ -28,7 +33,7 @@ class WeatherTask extends Task{
                     Weather::changeWeather($world, $weather, rand(6000, 18000));
                 }
             }else{
-                if($worldData->getRainLevel() == 1){
+                if($worldData->getRainLevel() === 1){
                     foreach($world->getLoadedChunks() as $hash => $chunk){
                         if(rand(1, 100000) === 1){
                             World::getXZ($hash, $x, $z);
@@ -49,9 +54,40 @@ class WeatherTask extends Task{
                                     }
                                 }
                             }
-                            $biomeId = ($chunk->getSubChunk($y >> SubChunk::COORD_BIT_SIZE)->getBiomeArray()->get($x, $y, $z));
-                            if(BiomeRegistry::getInstance()->getBiome($biomeId)->getTemperature() > 0.15){
+                            if(BiomeRegistry::getInstance()->getBiome($chunk->getBiomeId($x, $y, $z))->getTemperature() > 0.15){
                                 Weather::generateThunderBolt($world, $x, $y, $z, true);
+                            }
+                        }
+                    }
+                }
+                if($worldData->getRainLevel() > 0){
+                    foreach($world->getLoadedChunks() as $hash => $chunk){
+                        if(rand(1, 100) === 1){
+                            World::getXZ($hash, $x, $z);
+                            $x = ($x << SubChunk::COORD_BIT_SIZE) + rand(0, 15);
+                            $z = ($z << SubChunk::COORD_BIT_SIZE) + rand(0, 15);
+                            $y = $chunk->getHighestBlockAt($x, $z);
+                            if($y !== null && BiomeRegistry::getInstance()->getBiome($chunk->getBiomeId($x, $y, $z))->getTemperature() <= 0.15){
+                                $block = $world->getBlockAt($x, $y, $z);
+                                if($block->getTypeId() === BlockTypeIds::SNOW_LAYER){
+                                    /** @var SnowLayer $block */
+                                    $layers = $block->getLayers();
+                                    if($layers >= 2){
+                                        continue;
+                                    }
+                                    $ev = new SnowLayerCreateEvent($world, $x, $y, $z);
+                                    $ev->call();
+                                    if(!$ev->isCancelled()){
+                                        $block->setLayers(++$layers);
+                                        $world->setBlockAt($x, $y, $z, $block);
+                                    }
+                                }elseif($block->isFullCube() && $block->getLightLevel() < 9){
+                                    $ev = new SnowLayerCreateEvent($world, $x, $y, $z);
+                                    $ev->call();
+                                    if(!$ev->isCancelled()){
+                                        $world->setBlockAt($x, $y + 1, $z, VanillaBlocks::SNOW_LAYER());
+                                    }
+                                }
                             }
                         }
                     }
