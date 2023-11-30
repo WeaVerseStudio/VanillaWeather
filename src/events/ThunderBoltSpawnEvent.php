@@ -8,6 +8,9 @@ use pocketmine\event\world\WorldEvent;
 use pocketmine\math\Vector3;
 use pocketmine\world\World;
 
+/**
+ * Called when lightning spawns, it allows you to cancel the creation of fire.
+ */
 class ThunderBoltSpawnEvent extends WorldEvent{
     use CancellableTrait;
 

@@ -8,6 +8,9 @@ use pocketmine\event\world\WorldEvent;
 use pocketmine\math\Vector3;
 use pocketmine\world\World;
 
+/**
+ * Called when a snow layer is created
+ */
 class SnowLayerCreateEvent extends WorldEvent{
     use CancellableTrait;
 
