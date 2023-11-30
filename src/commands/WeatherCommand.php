@@ -41,6 +41,8 @@ use PluginOwnedTrait;
         $time = array_shift($args);
         if($time === null){
             $time = rand(300, 900);
+        }elseif($time <= 0){
+            $time = -1;
         }
         if($time != intval($time)){
             $sender->sendMessage(TextFormat::RED."Time must be a number");
@@ -60,7 +62,7 @@ use PluginOwnedTrait;
                 $sender->sendMessage(TextFormat::RED."Unknown argument ".$weather);
                 break;
         }
-        $time <= 0 ? $messageTime = TextFormat::YELLOW." forever" : $messageTime = " for ".TextFormat::YELLOW.$time.TextFormat::GREEN." seconds";
+        $time == -1 ? $messageTime = TextFormat::YELLOW." forever" : $messageTime = " for ".TextFormat::YELLOW.$time.TextFormat::GREEN." seconds";
         $sender->sendMessage(TextFormat::GREEN."Weather changed to ".TextFormat::YELLOW.$weather.TextFormat::GREEN.$messageTime);
     }
 }
