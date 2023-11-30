@@ -7,13 +7,14 @@ use pocketmine\event\entity\EntityDamageEvent;
 use pocketmine\math\Vector3;
 use pocketmine\player\Player;
 use pocketmine\scheduler\Task;
+use pocketmine\world\biome\BiomeRegistry;
 use pocketmine\world\format\SubChunk;
 use pocketmine\world\World;
 use pocketmine\world\WorldManager;
 
 class WeatherTask extends Task{
 
-    public function __construct(private WorldManager $worldManager){
+    public function __construct(private readonly WorldManager $worldManager){
     }
 
     public function onRun() : void{
@@ -48,7 +49,10 @@ class WeatherTask extends Task{
                                     }
                                 }
                             }
-                            Weather::generateThunderBolt($world, $x, $y, $z, true);
+                            $biomeId = ($chunk->getSubChunk($y >> SubChunk::COORD_BIT_SIZE)->getBiomeArray()->get($x, $y, $z));
+                            if(BiomeRegistry::getInstance()->getBiome($biomeId)->getTemperature() > 0.15){
+                                Weather::generateThunderBolt($world, $x, $y, $z, true);
+                            }
                         }
                     }
                 }
