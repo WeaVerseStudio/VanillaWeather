@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace PrograMistV1\Weather;
 
 use pocketmine\block\BlockTypeIds;
-use pocketmine\block\Opaque;
 use pocketmine\block\SnowLayer;
 use pocketmine\block\VanillaBlocks;
 use pocketmine\event\entity\EntityDamageEvent;
@@ -33,7 +32,7 @@ class WeatherTask extends Task{
                     Weather::changeWeather($world, $weather, rand(6000, 18000));
                 }
             }else{
-                if($worldData->getRainLevel() === 1){
+                if($worldData->getRainLevel() === 1.0){
                     foreach($world->getLoadedChunks() as $hash => $chunk){
                         if(rand(1, 100000) === 1){
                             World::getXZ($hash, $x, $z);
@@ -41,20 +40,20 @@ class WeatherTask extends Task{
                             $x = ($x << SubChunk::COORD_BIT_SIZE) + rand(0, 15);
                             $z = ($z << SubChunk::COORD_BIT_SIZE) + rand(0, 15);
                             $y = $chunk->getHighestBlockAt($x, $z) ?? 64;
-                            foreach($entities as $entity){
-                                if($entity instanceof Player){
-                                    $entityPos = $entity->getPosition();
-                                    if((new Vector3($x, $y, $z))->distance($entityPos->add(-3, 0, -3)) < 5){
-                                        $x = $entityPos->getX();
-                                        $y = $entityPos->getY();
-                                        $z = $entityPos->getZ();
-                                        $damage = new EntityDamageEvent($entity, EntityDamageEvent::CAUSE_ENTITY_ATTACK, 5);
-                                        $entity->attack($damage);
-                                        break;
+                            if(BiomeRegistry::getInstance()->getBiome($chunk->getBiomeId($x, $y, $z))->getTemperature() > 0.15){
+                                foreach($entities as $entity){
+                                    if($entity instanceof Player){
+                                        $entityPos = $entity->getPosition();
+                                        if((new Vector3($x, $y, $z))->distance($entityPos->add(-3, 0, -3)) < 5){
+                                            $x = $entityPos->getX();
+                                            $y = $entityPos->getY();
+                                            $z = $entityPos->getZ();
+                                            $damage = new EntityDamageEvent($entity, EntityDamageEvent::CAUSE_ENTITY_ATTACK, 5);
+                                            $entity->attack($damage);
+                                            break;
+                                        }
                                     }
                                 }
-                            }
-                            if(BiomeRegistry::getInstance()->getBiome($chunk->getBiomeId($x, $y, $z))->getTemperature() > 0.15){
                                 Weather::generateThunderBolt($world, $x, $y, $z, true);
                             }
                         }
