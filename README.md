@@ -23,3 +23,25 @@ If you want to prevent weather changes in the world, then set the time value to 
 > 
 > You can change the weather using:
 > `PrograMistV1\Weather\Weather::changeWeather(World $world, int $weather, int $time = 6000) : void;`
+> 
+### Config
+> You can customize the weather behavior for a specific world. To do this, edit config.yml in plugin_data. The default values for all worlds are set to `default`.
+> 
+> Filling example:
+> ```yaml
+> ---
+> default:
+>   weatherChange: true
+>   createLightning: true
+>   lightningFire: false
+>   damageFromLightning: false
+>   createSnowLayers: true
+> 
+> firstWorld:
+>   weatherChange: false
+> 
+> secondWorld:
+>   createLightning: false
+>   createSnowLayers: false
+> ...
+> ```
