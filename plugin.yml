@@ -1,6 +1,6 @@
 ---
 name: VanillaWeather
-version: 1.0.6
+version: 1.1.0
 main: PrograMistV1\Weather\Weather
 api: 5.0.0
 src-namespace-prefix: PrograMistV1\Weather
