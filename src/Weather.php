@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PrograMistV1\Weather;
 
+use Exception;
 use pocketmine\block\BlockTypeIds;
 use pocketmine\block\VanillaBlocks;
 use pocketmine\entity\Entity;
@@ -20,21 +21,47 @@ use pocketmine\network\mcpe\protocol\types\entity\PropertySyncData;
 use pocketmine\network\mcpe\protocol\types\LevelEvent;
 use pocketmine\player\Player;
 use pocketmine\plugin\PluginBase;
+use pocketmine\utils\Config;
+use pocketmine\utils\SingletonTrait;
 use pocketmine\world\World;
 use PrograMistV1\Weather\commands\WeatherCommand;
 use PrograMistV1\Weather\events\ThunderBoltSpawnEvent;
 use PrograMistV1\Weather\events\WeatherChangeEvent;
+use Symfony\Component\Filesystem\Path;
 
 class Weather extends PluginBase implements Listener{
+    use SingletonTrait;
+
     public const CLEAR = 0;
     public const RAIN = 1;
     public const THUNDER = 2;
     public const COMMAND_WEATHER = "vanillaweather.weather.command";
 
+    public const CHANGE_WEATHER = "weatherChange";
+    public const CREATE_LIGHTNING = "createLightning";
+    public const LIGHTNING_FIRE = "lightningFire";
+    public const DAMAGE_FROM_LIGHTNING = "damageFromLightning";
+    public const CREATE_SNOW_LAYERS = "createSnowLayers";
+
+    private Config $config;
+
     protected function onEnable() : void{
+        self::setInstance($this);
         $this->getServer()->getPluginManager()->registerEvents($this, $this);
-        $this->getScheduler()->scheduleRepeatingTask(new WeatherTask($this->getServer()->getWorldManager()), 1);
+        $this->getScheduler()->scheduleRepeatingTask(new WeatherTask(
+            $this->getServer()->getWorldManager()
+        ), 1);
         $this->getServer()->getCommandMap()->register("vanillaweather", new WeatherCommand($this));
+
+        $this->config = new Config(Path::join($this->getDataFolder(), "config.yml"), Config::YAML, [
+            "default" => [
+                self::CHANGE_WEATHER => true,
+                self::CREATE_LIGHTNING => true,
+                self::LIGHTNING_FIRE => false,
+                self::DAMAGE_FROM_LIGHTNING => false,
+                self::CREATE_SNOW_LAYERS => true
+            ]
+        ]);
     }
 
     public function onPlayerJoin(PlayerJoinEvent $event) : void{
@@ -136,5 +163,25 @@ class Weather extends PluginBase implements Listener{
     public function onWorldInit(WorldInitEvent $event) : void{
         $world = $event->getWorld();
         self::changeWeather($world, self::CLEAR, 18000);
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function getWorldSetting(string $worldName, string $setting): bool{
+        $defaultSettings = $this->config->get("default", null);
+        $settings = $this->config->get($worldName, null);
+
+        if($settings !== null){
+            if(isset($settings[$setting])){
+                return boolval($settings[$setting]);
+            }
+        }
+
+        if(isset($defaultSettings[$setting])){
+            return boolval($defaultSettings[$setting]);
+        }else{
+            throw new Exception("Unknown setting: $setting");
+        }
     }
 }

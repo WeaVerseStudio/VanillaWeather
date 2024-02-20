@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace PrograMistV1\Weather\commands;
 
+use Exception;
 use pocketmine\command\Command;
 use pocketmine\command\CommandSender;
 use pocketmine\command\utils\InvalidCommandSyntaxException;
@@ -29,6 +30,9 @@ use PluginOwnedTrait;
         $this->setPermission(Weather::COMMAND_WEATHER);
     }
 
+    /**
+     * @throws Exception
+     */
     public function execute(CommandSender $sender, string $commandLabel, array $args) : void{
         if(!$sender instanceof Player){
             return;
@@ -62,7 +66,11 @@ use PluginOwnedTrait;
                 $sender->sendMessage(TextFormat::RED."Unknown argument ".$weather);
                 break;
         }
-        $time == -1 ? $messageTime = TextFormat::YELLOW." forever" : $messageTime = " for ".TextFormat::YELLOW.$time.TextFormat::GREEN." seconds";
+        if(!Weather::getInstance()->getWorldSetting($world->getFolderName(), Weather::CHANGE_WEATHER) || $time == -1){
+            $messageTime = TextFormat::YELLOW." forever";
+        }else{
+            $messageTime = " for ".TextFormat::YELLOW.$time.TextFormat::GREEN." seconds";
+        }
         $sender->sendMessage(TextFormat::GREEN."Weather changed to ".TextFormat::YELLOW.$weather.TextFormat::GREEN.$messageTime);
     }
 }
