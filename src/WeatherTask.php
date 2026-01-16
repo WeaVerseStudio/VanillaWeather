@@ -22,8 +22,9 @@ class WeatherTask extends Task{
 
     private const MAX_SNOW_LAYERS = 2;
     private const LIGHTNING_DAMAGE = 5;
-    private const LIGHTNING_CHANCE = 100000;
+    private const LIGHTNING_CHANCE = 5000;
     private const LIGHTNING_DAMAGE_RADIUS = 2;
+    private const SNOW_ATTEMPTS = 9;
     private const SNOW_CHANCE = 100;
     private const SNOW_TEMPERATURE_THRESHOLD = 0.15;
     private const SNOW_PLACEMENT_MAX_LIGHT_LEVEL = 9;
@@ -113,32 +114,36 @@ class WeatherTask extends Task{
         foreach($world->getLoadedChunks() as $hash => $chunk){
             World::getXZ($hash, $chunkX, $chunkZ);
 
-            // local coordinates within the chunk
-            $localX = rand(0, $localMask);
-            $localZ = rand(0, $localMask);
-
-            // world coordinates
-            $blockX = ($chunkX << SubChunk::COORD_BIT_SIZE) + $localX;
-            $blockZ = ($chunkZ << SubChunk::COORD_BIT_SIZE) + $localZ;
-
-            $blockY = $chunk->getHighestBlockAt($localX, $localZ);
-
-            /**
-             * Snow and lightning cannot spawn in air block
-             */
-            if($blockY === null){
-                continue;
-            }
-
-            $temperature = BiomeRegistry::getInstance()->getBiome($chunk->getBiomeId($localX, $blockY, $localZ))->getTemperature();
             $rainLevel = $worldData->getRainLevel();
 
-            if($createLightning && $temperature > self::SNOW_TEMPERATURE_THRESHOLD && $rainLevel === 1.0 && rand(1, self::LIGHTNING_CHANCE) === 1){
-                $this->handleThunder($world, $blockX, $blockY, $blockZ, $damageFromLightning, $lightningFire);
+            if($createLightning){
+                $localXL = rand(0, $localMask);
+                $localZL = rand(0, $localMask);
+                $blockYL = $chunk->getHighestBlockAt($localXL, $localZL);
+                if($blockYL !== null){
+                    $temperatureL = BiomeRegistry::getInstance()->getBiome($chunk->getBiomeId($localXL, $blockYL, $localZL))->getTemperature();
+                    if($temperatureL > self::SNOW_TEMPERATURE_THRESHOLD && $rainLevel === 1.0 && rand(1, self::LIGHTNING_CHANCE) === 1){
+                        $blockXL = ($chunkX << SubChunk::COORD_BIT_SIZE) + $localXL;
+                        $blockZL = ($chunkZ << SubChunk::COORD_BIT_SIZE) + $localZL;
+                        $this->handleThunder($world, $blockXL, $blockYL, $blockZL, $damageFromLightning, $lightningFire);
+                    }
+                }
             }
 
-            if($createSnow && $temperature <= self::SNOW_TEMPERATURE_THRESHOLD && $rainLevel > 0 && rand(1, self::SNOW_CHANCE) === 1){
-                $this->handleSnow($world, $blockX, $blockY, $blockZ);
+            if($createSnow){
+                for($i = 0; $i < self::SNOW_ATTEMPTS; $i++){
+                    $localXS = rand(0, $localMask);
+                    $localZS = rand(0, $localMask);
+                    $blockYS = $chunk->getHighestBlockAt($localXS, $localZS);
+                    if($blockYS === null) continue;
+
+                    $temperatureS = BiomeRegistry::getInstance()->getBiome($chunk->getBiomeId($localXS, $blockYS, $localZS))->getTemperature();
+                    if($temperatureS <= self::SNOW_TEMPERATURE_THRESHOLD && $rainLevel > 0 && rand(1, self::SNOW_CHANCE) === 1){
+                        $blockXS = ($chunkX << SubChunk::COORD_BIT_SIZE) + $localXS;
+                        $blockZS = ($chunkZ << SubChunk::COORD_BIT_SIZE) + $localZS;
+                        $this->handleSnow($world, $blockXS, $blockYS, $blockZS);
+                    }
+                }
             }
         }
     }
