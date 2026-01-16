@@ -121,7 +121,11 @@ class WeatherTask extends Task{
                 $localZL = rand(0, $localMask);
                 $blockYL = $chunk->getHighestBlockAt($localXL, $localZL);
                 if($blockYL !== null){
-                    $temperatureL = BiomeRegistry::getInstance()->getBiome($chunk->getBiomeId($localXL, $blockYL, $localZL))->getTemperature();
+                    $biome = BiomeRegistry::getInstance()->getBiome($chunk->getBiomeId($localXL, $blockYL, $localZL));
+                    if($biome->getRainfall() === 0.0){
+                        continue;
+                    }
+                    $temperatureL = $biome->getTemperature();
                     if($temperatureL > self::SNOW_TEMPERATURE_THRESHOLD && $rainLevel === 1.0 && rand(1, self::LIGHTNING_CHANCE) === 1){
                         $blockXL = ($chunkX << SubChunk::COORD_BIT_SIZE) + $localXL;
                         $blockZL = ($chunkZ << SubChunk::COORD_BIT_SIZE) + $localZL;
