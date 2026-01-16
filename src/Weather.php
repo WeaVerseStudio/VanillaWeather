@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace PrograMistV1\Weather;
 
-use Exception;
+use InvalidArgumentException;
 use pocketmine\block\BlockTypeIds;
 use pocketmine\block\VanillaBlocks;
 use pocketmine\entity\Entity;
@@ -35,6 +35,7 @@ class Weather extends PluginBase implements Listener{
     public const CLEAR = 0;
     public const RAIN = 1;
     public const THUNDER = 2;
+    public const MAX_RAIN_INTENSITY = 65535;
     public const COMMAND_WEATHER = "vanillaweather.weather.command";
 
     public const CHANGE_WEATHER = "weatherChange";
@@ -44,6 +45,8 @@ class Weather extends PluginBase implements Listener{
     public const CREATE_SNOW_LAYERS = "createSnowLayers";
 
     private Config $config;
+
+    private static array $packets = [];
 
     protected function onEnable() : void{
         self::setInstance($this);
@@ -62,13 +65,28 @@ class Weather extends PluginBase implements Listener{
                 self::CREATE_SNOW_LAYERS => true
             ]
         ]);
+
+        self::$packets[self::RAIN] = [LevelEventPacket::create(LevelEvent::START_RAIN, self::MAX_RAIN_INTENSITY, null)];
+        self::$packets[self::THUNDER] = [LevelEventPacket::create(LevelEvent::START_THUNDER, self::MAX_RAIN_INTENSITY, null)];
+        self::$packets[self::CLEAR] = [
+            LevelEventPacket::create(LevelEvent::STOP_RAIN, 0, null),
+            LevelEventPacket::create(LevelEvent::STOP_THUNDER, 0, null)
+        ];
     }
 
+    /** @noinspection PhpUnused */
     public function onPlayerJoin(PlayerJoinEvent $event) : void{
         self::changeWeatherForPlayer($event->getPlayer());
     }
 
+    /**
+     * @throws InvalidArgumentException
+     */
     public static function changeWeather(World $world, int $weather, int $time = 6000) : void{
+        if(!array_key_exists($weather, self::$packets)){
+            throw new InvalidArgumentException("Invalid weather type: $weather");
+        }
+
         $ev = new WeatherChangeEvent($world);
         $ev->call();
         if($ev->isCancelled()){
@@ -81,94 +99,90 @@ class Weather extends PluginBase implements Listener{
             self::THUNDER => 1,
             default => 0
         });
-        if($weather === self::RAIN){
-            $packets = [LevelEventPacket::create(LevelEvent::START_RAIN, 65535, null)];
-        }elseif($weather === self::THUNDER){
-            $packets = [LevelEventPacket::create(LevelEvent::START_THUNDER, 65535, null)];
-        }else{
-            $packets = [
-                LevelEventPacket::create(LevelEvent::STOP_RAIN, 0, null),
-                LevelEventPacket::create(LevelEvent::STOP_THUNDER, 0, null)
-            ];
-        }
-        foreach($world->getPlayers() as $player){
-            foreach($packets as $packet){
-                $player->getNetworkSession()->sendDataPacket($packet);
-            }
-        }
+        NetworkBroadcastUtils::broadcastPackets($world->getPlayers(), self::$packets[$weather]);
     }
 
     public static function changeWeatherForPlayer(Player $player, ?World $world = null) : void{
-        $world ?? $world = $player->getWorld();
+        $world ??= $player->getWorld();
         $level = $world->getProvider()->getWorldData()->getRainLevel();
-        if($level == 0.5){
-            $packets = [LevelEventPacket::create(LevelEvent::START_RAIN, 65535, null)];
-        }elseif($level == 1){
-            $packets = [LevelEventPacket::create(LevelEvent::START_THUNDER, 65535, null)];
-        }else{
-            $packets = [
-                LevelEventPacket::create(LevelEvent::STOP_RAIN, 0, null),
-                LevelEventPacket::create(LevelEvent::STOP_THUNDER, 0, null)
-            ];
+        $weather = match ($level) {
+            0.5 => self::RAIN,
+            1.0 => self::THUNDER,
+            default => self::CLEAR,
+        };
+        foreach(self::$packets[$weather] as $packet){
+            $player->getNetworkSession()->sendDataPacket($packet);
         }
-        NetworkBroadcastUtils::broadcastPackets([$player], $packets);
     }
 
     public static function generateThunderBolt(World $world, int $x, int $y, int $z, bool $doFire = false) : void{
-        $ev = new ThunderBoltSpawnEvent($world, $x, $y, $z, $doFire);
-        $ev->call();
-        if($ev->isCancelled()){
+        $event = new ThunderBoltSpawnEvent($world, $x, $y, $z, $doFire);
+        $event->call();
+
+        if($event->isCancelled()){
             return;
         }
-        $id = Entity::nextRuntimeId();
-        $packets[] = AddActorPacket::create(
-            $id,
-            $id,
-            "minecraft:lightning_bolt",
-            new Vector3($x, $y, $z),
-            null,
-            0,
-            0,
-            0,
-            0,
-            [],
-            [],
-            new PropertySyncData([], []),
-            []
-        );
-        $packets[] = PlaySoundPacket::create(
-            "ambient.weather.thunder",
-            $x,
-            $y,
-            $z,
-            10,
-            1
-        );
+
+        $entityId = Entity::nextRuntimeId();
+        $position = new Vector3($x, $y, $z);
+
+        $packets = [
+            AddActorPacket::create(
+                $entityId,
+                $entityId,
+                'minecraft:lightning_bolt',
+                $position,
+                null,
+                0, 0, 0,
+                0,
+                [],
+                [],
+                new PropertySyncData([], []),
+                []
+            ),
+            PlaySoundPacket::create(
+                'ambient.weather.thunder',
+                $x,
+                $y,
+                $z,
+                10,
+                1
+            )
+        ];
+
         NetworkBroadcastUtils::broadcastPackets($world->getPlayers(), $packets);
-        if($ev->isDoFire()){
-            $block = $world->getBlockAt($x, $y + 1, $z);
-            if($block->getTypeId() === BlockTypeIds::AIR){
-                $world->setBlockAt($x, $y + 1, $z, VanillaBlocks::FIRE());
-            }
+
+        if($event->isDoFire()){
+            self::tryIgniteBlock($world, $x, $y + 1, $z);
         }
     }
 
+    private static function tryIgniteBlock(World $world, int $x, int $y, int $z) : void{
+        if($world->getBlockAt($x, $y, $z)->getTypeId() === BlockTypeIds::AIR){
+            $world->setBlockAt($x, $y, $z, VanillaBlocks::FIRE());
+        }
+    }
+
+    /** @noinspection PhpUnused */
     public function onPlayerTeleport(EntityTeleportEvent $event) : void{
-        if(!($player = $event->getEntity()) instanceof Player){
+        $player = $event->getEntity();
+        if(!($player instanceof Player)){
             return;
         }
+
         self::changeWeatherForPlayer($player, $event->getTo()->getWorld());
     }
 
+    /** @noinspection PhpUnused */
     public function onWorldInit(WorldInitEvent $event) : void{
         $world = $event->getWorld();
         self::changeWeather($world, self::CLEAR, 18000);
     }
 
     /**
-     * @throws Exception
+     * @throws InvalidArgumentException
      */
-    public function getWorldSetting(string $worldName, string $setting): bool{
+    public function getWorldSetting(string $worldName, string $setting) : bool{
         $defaultSettings = $this->config->get("default", null);
         $settings = $this->config->get($worldName, null);
 
@@ -181,7 +195,7 @@ class Weather extends PluginBase implements Listener{
         if(isset($defaultSettings[$setting])){
             return boolval($defaultSettings[$setting]);
         }else{
-            throw new Exception("Unknown setting: $setting");
+            throw new InvalidArgumentException("Unknown setting: $setting");
         }
     }
 }
