@@ -53,7 +53,7 @@ class Weather extends PluginBase implements Listener{
         $this->getServer()->getPluginManager()->registerEvents($this, $this);
         $this->getScheduler()->scheduleRepeatingTask(new WeatherTask(
             $this->getServer()->getWorldManager()
-        ), 1);
+        ), 20);
         $this->getServer()->getCommandMap()->register("vanillaweather", new WeatherCommand($this));
 
         $this->config = new Config(Path::join($this->getDataFolder(), "config.yml"), Config::YAML, [
