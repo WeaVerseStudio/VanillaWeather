@@ -66,8 +66,14 @@ class Weather extends PluginBase implements Listener{
             ]
         ]);
 
-        self::$packets[self::RAIN] = [LevelEventPacket::create(LevelEvent::START_RAIN, self::MAX_RAIN_INTENSITY, null)];
-        self::$packets[self::THUNDER] = [LevelEventPacket::create(LevelEvent::START_THUNDER, self::MAX_RAIN_INTENSITY, null)];
+        self::$packets[self::RAIN] = [
+            LevelEventPacket::create(LevelEvent::STOP_THUNDER, 0, null),
+            LevelEventPacket::create(LevelEvent::START_RAIN, self::MAX_RAIN_INTENSITY, null)
+        ];
+        self::$packets[self::THUNDER] = [
+            LevelEventPacket::create(LevelEvent::START_RAIN, self::MAX_RAIN_INTENSITY, null),
+            LevelEventPacket::create(LevelEvent::START_THUNDER, self::MAX_RAIN_INTENSITY, null)
+        ];
         self::$packets[self::CLEAR] = [
             LevelEventPacket::create(LevelEvent::STOP_RAIN, 0, null),
             LevelEventPacket::create(LevelEvent::STOP_THUNDER, 0, null)
