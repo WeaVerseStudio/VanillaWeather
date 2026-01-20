@@ -22,7 +22,7 @@ class WeatherTask extends Task{
 
     private const MAX_SNOW_LAYERS = 2;
     private const LIGHTNING_DAMAGE = 5;
-    private const LIGHTNING_CHANCE = 5000;
+    private const LIGHTNING_CHANCE = 7500;
     private const LIGHTNING_DAMAGE_RADIUS = 2;
     private const SNOW_ATTEMPTS = 9;
     private const SNOW_CHANCE = 100;
