@@ -152,7 +152,8 @@ class Weather extends PluginBase implements Listener{
                 $y,
                 $z,
                 10,
-                1
+                1,
+                null
             )
         ];
 
